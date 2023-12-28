@@ -1,8 +1,7 @@
-"use client";
-
 import useSound from "use-sound";
+
 import { useEffect, useState } from "react";
-import { BsPauseFill, BsPlayFill } from "react-icons/bs";
+import { BsPauseFill, BsPlayFill, BsShuffle } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
 
@@ -12,6 +11,7 @@ import usePlayer from "@/hooks/usePlayer";
 import LikeButton from "./LikeButton";
 import MediaItem from "./MediaItem";
 import Slider from "./Slider";
+import shuffleArray from "./shuffleArray";
 
 
 interface PlayerContentProps {
@@ -26,9 +26,28 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
   const player = usePlayer();
   const [volume, setVolume] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
 
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
   const VolumeIcon = volume === 0 ? HiSpeakerXMark : HiSpeakerWave;
+
+  const toggleShuffle = () => {
+    const newIsShuffle = !isShuffle;
+    console.log('Toggling Shuffle. New Shuffle State:', newIsShuffle);
+
+    if (newIsShuffle) {
+      const shuffledIds = shuffleArray(player.ids);
+      player.setIds(shuffledIds);
+    } else {
+      player.setIds([...player.originalPlaylistOrder]);
+    }
+    setIsShuffle(newIsShuffle);
+    player.setIsShuffle(newIsShuffle);
+  };
+
+  useEffect(() => {
+    setIsShuffle(player.isShuffle);
+  }, [player.isShuffle]);
 
   const onPlayNext = () => {
     if (player.ids.length === 0) {
@@ -38,14 +57,30 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
     const currentIndex = player.ids.findIndex((id) => id === player.activeId);
     const nextSong = player.ids[currentIndex + 1];
 
+    const isLastSong = currentIndex === player.ids.length - 1;
+
+    if (isLastSong) {
+      if (isShuffle) {
+        const shuffledIds = shuffleArray(player.ids);
+        player.setIds(shuffledIds);
+        player.setId(shuffledIds[0]);
+      } else {
+        player.setId(player.ids[0]);
+      }
+      return;
+    }
+
     if (!nextSong) {
       return player.setId(player.ids[0]);
     }
 
     player.setId(nextSong);
-  }
+  };
 
   const onPlayPrevious = () => {
+    console.log('Active ID:', player.activeId);
+    console.log('Playlist IDs:', player.ids);
+
     if (player.ids.length === 0) {
       return;
     }
@@ -104,6 +139,13 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
           <div className="flex items-center gap-x-4">
             <MediaItem data={song} />
             <LikeButton songId={song.id} />
+            <BsShuffle
+              onClick={toggleShuffle}
+              size={24}
+              className={isShuffle ? 'text-green-500 cursor-pointer' : 'text-gray-500 cursor-pointer'}
+              aria-label="Shuffle Button"
+              title="Shuffle"
+            />
           </div>
         </div>
 
