@@ -53,15 +53,11 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
     if (player.ids.length === 0) {
       return;
     }
-
     const currentIndex = player.ids.findIndex((id) => id === player.activeId);
-    const nextSong = player.ids[currentIndex + 1];
-
     const isLastSong = currentIndex === player.ids.length - 1;
-
     if (isLastSong) {
       if (isShuffle) {
-        const shuffledIds = shuffleArray(player.ids);
+        const shuffledIds = shuffleArray(player.originalPlaylistOrder.slice());
         player.setIds(shuffledIds);
         player.setId(shuffledIds[0]);
       } else {
@@ -69,13 +65,12 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
       }
       return;
     }
-
+    const nextSong = player.ids[currentIndex + 1];
     if (!nextSong) {
       return player.setId(player.ids[0]);
     }
-
     player.setId(nextSong);
-  };
+  };  
 
   const onPlayPrevious = () => {
     console.log('Active ID:', player.activeId);
